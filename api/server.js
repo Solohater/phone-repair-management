@@ -8,7 +8,7 @@ const errorHandler = require('./middleware/errorHandler')
 const cookieParser = require('cookie-parser')
 const corsOptions = require('./config/corsOptions')
 const cors = require('cors')
-const { wake } = require('./db')
+const { wake, query } = require('./db')
 const PORT = process.env.PORT || 3500
 
 console.log(process.env.NODE_ENV)
@@ -37,6 +37,37 @@ app.all('*', (req, res) => {
 
 app.use(errorHandler)
 
+async function initSchema() {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS "User" (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        roles TEXT NOT NULL DEFAULT '["Employee"]',
+        active BOOLEAN NOT NULL DEFAULT true,
+        "createdAt" TIMESTAMPTZ DEFAULT NOW()
+      )
+    `)
+    await query(`
+      CREATE TABLE IF NOT EXISTS "Note" (
+        id TEXT PRIMARY KEY,
+        ticket TEXT,
+        title TEXT NOT NULL,
+        text TEXT NOT NULL,
+        comment TEXT DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'new',
+        "userId" TEXT NOT NULL REFERENCES "User"(id),
+        "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+        "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+      )
+    `)
+    console.log('Schema initialized.')
+  } catch (e) {
+    console.error('Schema init failed:', e.message)
+  }
+}
+
 async function keepAlive() {
   try {
     await wake()
@@ -45,8 +76,9 @@ async function keepAlive() {
   }
 }
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`)
+  await initSchema()
   keepAlive()
   setInterval(keepAlive, 15000)
 })

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server",
     "dev": "nodemon server",
-    "db:migrate": "echo 'Run the migration SQL in the Neon SQL Editor (see prisma/migration.sql)'"
+    "db:migrate": "echo 'Run the migration SQL in the Neon SQL Editor (see prisma/migration.sql)'",
+    "seed": "node scripts/seed.js"
   },
   "keywords": [],
   "author": "",
